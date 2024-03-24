@@ -85,8 +85,7 @@ class ProductController {
       const update_price = await queryMysql(`
         UPDATE GIA
         SET 
-          G_giaBanDau = ${req.body.G_giaBanDau},
-          G_thoiGia = ${req.body.G_giaBanDau}
+          G_thoiGia = ${req.body.G_thoiGia}
         WHERE SP_id = ${id}
       `);
 

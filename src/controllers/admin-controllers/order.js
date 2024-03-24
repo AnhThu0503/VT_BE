@@ -18,7 +18,6 @@ class OrderController {
 
           await Promise.all(
             orderDetail.map(async (detail) => {
-              console.log(detail);
               const product = await queryMysql(
                 `SELECT * FROM SANPHAM WHERE SP_id = ${detail.SP_id}`
               );

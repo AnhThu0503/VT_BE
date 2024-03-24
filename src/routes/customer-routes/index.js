@@ -1,4 +1,7 @@
 const express = require("express");
+const stripe = require("stripe")(
+  "sk_test_51OxTc1RxWukTEIoIiSl5HKASXZVguM2tdPjPAGkEKgHMtTvZaNndgJVGUqRVLPq1sSvs6OfPvDvXBjDXfVnmVGDY00BKZ5p1eX"
+);
 const productController = require("../../controllers/customer-controllers/product");
 const categoryController = require("../../controllers/customer-controllers/category");
 const registerController = require("../../controllers/customer-controllers/register");
@@ -28,9 +31,35 @@ router.post("/users", registerController.createUser);
 router.post("/users/comment", commentController.comment);
 router.post("/cart/add", cartController.addToCart);
 
+// handle session online payment
+router.post("/paymentOnline", async (req, res) => {
+  const { products } = req.body;
+
+  const lineItems = products.map((product) => ({
+    price_data: {
+      currency: "vnd",
+      product_data: {
+        name: product.SP_ten,
+        images: [product.image],
+      },
+      unit_amount: Math.round(product.G_thoiGia),
+    },
+    quantity: product.soLuong,
+  }));
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: lineItems,
+    mode: "payment",
+    success_url: "http://localhost:3000/success",
+    cancel_url: "http://localhost:3000/cancel",
+  });
+
+  res.json({ id: session.id });
+});
+
 router.put("/address", customerController.updateAddress);
 router.put("/customer", customerController.updateCustomer);
-
 router.delete("/cart/item", cartController.removeItem);
 
 module.exports = router;
