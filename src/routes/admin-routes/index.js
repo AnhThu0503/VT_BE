@@ -15,6 +15,7 @@ router.get("/discounts", discountController.getAllDiscount);
 
 router.post("/product", productController.createProduct);
 router.post("/product/update", productController.getProduct);
+router.post("/category", categoryController.uploadProductCategory);
 
 router.put("/order/update", orderController.updateStatusOrder);
 router.put("/product/update", productController.updateProduct);

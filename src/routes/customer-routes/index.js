@@ -23,6 +23,7 @@ router.get("/cart/items", cartController.getAllItem);
 router.get("/cart/sum", cartController.sumItemCart);
 router.get("/customer", customerController.getCustomerInfo);
 router.get("/comments", commentController.getComments);
+router.get("/order-customer", orderController.getOrdersOfCustomer);
 
 router.post("/products/search", productController.searchProduct);
 router.post("/order", orderController.createOrder);
@@ -57,7 +58,7 @@ router.post("/paymentOnline", async (req, res) => {
 
   res.json({ id: session.id });
 });
-
+router.put("/order/update", orderController.updateStatusOrder);
 router.put("/address", customerController.updateAddress);
 router.put("/customer", customerController.updateCustomer);
 router.delete("/cart/item", cartController.removeItem);

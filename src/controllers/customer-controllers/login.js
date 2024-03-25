@@ -42,7 +42,7 @@ class LoginController {
     try {
       var userVerify = await jwt.verify(req.query.token, privateKey);
       const users = await queryMysql(
-        `select ND_id, ND_email, ND_ten, ND_diaChi from nguoi_dung where ND_id=${userVerify.ND_id}`
+        `select ND_id, ND_email, ND_ten,ND_SDT, ND_diaChi from nguoi_dung where ND_id=${userVerify.ND_id}`
       );
       const count_cart = await queryMysql(
         `select count(GH_id) as value from giohang where ND_id=${users[0].ND_id}`

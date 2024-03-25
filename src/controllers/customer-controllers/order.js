@@ -65,6 +65,65 @@ class OrderController {
             inner join soctrangspecial.gia as g on g.SP_id=sp.SP_id`);
     res.json(products);
   }
+
+  async getOrdersOfCustomer(req, res) {
+    try {
+      if (req.query?.ND_id) {
+        const orders = await queryMysql(
+          `SELECT * FROM DONHANG WHERE ND_id=${req.query.ND_id}`
+        );
+
+        let arrOrders = [];
+
+        await Promise.all(
+          orders.map(async (order) => {
+            const orderDetail = await queryMysql(
+              `SELECT * FROM CHI_TIET_DH WHERE DH_id = ${order.DH_id}`
+            );
+
+            const detailOrderProduct = await Promise.all(
+              orderDetail.map(async (detail) => {
+                const product = await queryMysql(
+                  `SELECT * FROM SANPHAM WHERE SP_id = ${detail.SP_id}`
+                );
+
+                const images = await queryMysql(
+                  `SELECT HA_URL FROM HINHANH WHERE SP_id = ${detail.SP_id}`
+                );
+
+                return {
+                  ...product[0], // Assuming product is an array, taking the first item
+                  soluong: detail.CTDH_soLuong,
+                  hinhanh: images.length > 0 ? images[0].HA_URL : null,
+                };
+              })
+            );
+
+            arrOrders.push({ order, detailOrderProduct });
+          })
+        );
+
+        res.json(arrOrders);
+      }
+    } catch (error) {
+      console.error("Error retrieving orders:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+  async updateStatusOrder(req, res) {
+    try {
+      await queryMysql(`
+      UPDATE DONHANG
+      SET DH_trangThai = '${req.body.trangthai}'
+      WHERE DH_id = ${req.body.DH_id}
+    `);
+
+      // Return a success message
+      res.json({ success: true, message: "Order status updated successfully" });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
 
 module.exports = new OrderController();
