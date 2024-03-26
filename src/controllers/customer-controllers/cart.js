@@ -38,7 +38,7 @@ class CartController {
   async getAllItem(req, res) {
     try {
       const products =
-        await queryMysql(`select sanpham.SP_id, SP_ten, sp_giohang.soLuong, G_thoiGia, sp_giohang.SPGH_id from sanpham
+        await queryMysql(`select sanpham.SP_id, SP_ten, SP_trongLuong,SP_donViTinh, sp_giohang.soLuong, G_thoiGia, sp_giohang.SPGH_id from sanpham
                 inner join sp_giohang on sp_giohang.SP_id=sanpham.SP_id
                 inner join giohang on giohang.GH_id=sp_giohang.GH_id
                 inner join gia on gia.SP_id=sanpham.SP_id
