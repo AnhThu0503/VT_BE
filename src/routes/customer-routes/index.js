@@ -13,6 +13,7 @@ const commentController = require("../../controllers/customer-controllers/commt"
 
 const router = express.Router();
 
+router.get("/product-all", productController.getProductAll);
 router.get("/products", productController.getAllProduct);
 router.get("/product", productController.getProduct);
 router.get("/categorys", categoryController.getCategorys);

@@ -10,6 +10,7 @@ class CartController {
         const count_product = await queryMysql(
           `select count(SPGH_id) as value from sp_giohang where GH_id=${carts[0].GH_id} and SP_id=${req.body.SP_id}`
         );
+
         if (count_product[0].value === 0) {
           const create_product_cart = await queryMysql(
             `insert into sp_giohang(GH_id,SP_id,soLuong)value(${carts[0].GH_id},${req.body.SP_id},${req.body.numberProduct})`
@@ -23,6 +24,7 @@ class CartController {
           const update_product_cart = await queryMysql(
             `update sp_giohang set soluong=soluong + ${req.body.numberProduct} where GH_id=${carts[0].GH_id} and SP_id=${req.body.SP_id}`
           );
+
           if (update_product_cart.affectedRows > 0) {
             res.json(true);
           } else {

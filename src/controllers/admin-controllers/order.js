@@ -27,7 +27,6 @@ class OrderController {
               });
             })
           );
-
           arrOrders.push({ order, user, detailOrderProduct });
         })
       );

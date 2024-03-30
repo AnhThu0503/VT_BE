@@ -25,6 +25,20 @@ class CategoryController {
       console.log(error);
     }
   }
+  async deleteCategory(req, res) {
+    try {
+      const id = req.query.DMSP_id;
+      console.log(id);
+      await queryMysql(`
+      DELETE FROM DANHMUCSANPHAM
+      WHERE DMSP_id = ${id}
+    `);
+
+      res.json("Xoa thanh cong");
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
 
 module.exports = new CategoryController();

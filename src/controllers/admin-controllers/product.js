@@ -9,7 +9,7 @@ class ProductController {
                 ${req.body.id_supplier_selected},
                 '${req.body.noiDung}',
                 ${req.body.tongTien},
-                '${req.body.dateNhap}'
+                '${req.body.ngayNhap}'
             )`);
       const create_product =
         await queryMysql(`insert into sanpham(DMSP_id,SP_ten,SP_NSX,SP_HSD,SP_soLuong,SP_trongLuong,SP_donViTinh,SP_moTa)value(
@@ -68,7 +68,7 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const id = req.body.SP_id;
-
+      console.log("nsx", req.body.SP_NSX);
       const update_product = await queryMysql(`
         UPDATE SANPHAM
         SET 
@@ -116,11 +116,41 @@ class ProductController {
       console.log(error);
     }
   }
-  async getAllProduct(req, res) {
-    const products =
-      await queryMysql(`SELECT * FROM soctrangspecial.sanpham as sp
-            inner join soctrangspecial.gia as g on g.SP_id=sp.SP_id`);
-    res.json(products);
+  async getProductAll(req, res) {
+    try {
+      const products = await queryMysql(`SELECT * FROM sanpham`);
+      const length = products.length;
+
+      for (let i = 0; i < length; i++) {
+        let product = products[i];
+
+        let images = await queryMysql(
+          `SELECT HA_URL FROM hinhanh WHERE SP_id=${product.SP_id}`
+        );
+        let prices = await queryMysql(
+          `SELECT * FROM gia WHERE SP_id=${product.SP_id}`
+        );
+        product.price = prices.length > 0 ? prices[0].G_thoiGia : 0;
+        product.G_giaBanDau = prices.length > 0 ? prices[0].G_giaBanDau : 0;
+        product.image = images.length > 0 ? images[0].HA_URL : "";
+        let product_discount = await queryMysql(
+          `SELECT * FROM khuyenmai WHERE CURDATE() BETWEEN KM_ngayBatDau AND KM_ngayKetThuc AND SP_id=${product.SP_id}`
+        );
+        product.discount =
+          product_discount.length > 0 ? product_discount[0] : null;
+
+        // Lấy thông tin danh mục sản phẩm cho sản phẩm hiện tại
+        let category = await queryMysql(
+          `SELECT * FROM DANHMUCSANPHAM WHERE DMSP_id = ${product.DMSP_id}`
+        );
+        product.category = category.length > 0 ? category[0] : null;
+      }
+
+      res.json({ products });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
   }
 
   async getProduct(req, res) {
@@ -132,10 +162,76 @@ class ProductController {
       const price = await queryMysql(`SELECT *
         FROM GIA
         WHERE SP_id = ${req.body.SP_id}`);
-
-      res.json({ product, price });
+      const id = product[0].DMSP_id; // Access DMSP_id from the first row of the product result
+      const category = await queryMysql(
+        `SELECT * FROM DANHMUCSANPHAM WHERE DMSP_id = ${id}`
+      ); // Fix interpolation syntax
+      res.json({ product, price, category });
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async getAllProductSelect(req, res) {
+    try {
+      const products = await queryMysql(`select * from sanpham`);
+      console.log("product select", products);
+      res.json(products);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async getProductStatic(req, res) {
+    try {
+      // Execute the SQL query against the database to get the top 3 products
+      const productData = await queryMysql(
+        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC LIMIT 3;"
+      );
+
+      const productsOrder = [];
+
+      for (const product of productData) {
+        const getProduct = await queryMysql(
+          `SELECT * FROM CHI_TIET_DH WHERE SP_id =${product.SP_id}`
+        );
+
+        const inforProduct = await queryMysql(
+          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
+        );
+        let sum = 0;
+        for (const productDB of getProduct) {
+          sum += productDB.CTDH_soLuong;
+        }
+        productsOrder.push({
+          ten: inforProduct[0].SP_ten,
+          soluong: sum,
+        });
+      }
+
+      const productReceipt = [];
+      for (const product of productData) {
+        const getProduct = await queryMysql(
+          `SELECT * FROM CHI_TIET_HDN WHERE SP_id =${product.SP_id}`
+        );
+        const inforProduct = await queryMysql(
+          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
+        );
+
+        console.log(getProduct);
+        productReceipt.push({
+          ten: inforProduct[0].SP_ten,
+          soluong: getProduct[0].CTHDN_soLuong,
+        });
+      }
+
+      // Send the result as a response
+      return res.status(200).json({ productsOrder, productReceipt });
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(500)
+        .json({ error: "Failed to retrieve product statistics" });
     }
   }
 }
