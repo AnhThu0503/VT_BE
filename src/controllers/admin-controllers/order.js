@@ -37,7 +37,6 @@ class OrderController {
       res.status(500).json({ error: "Internal server error" });
     }
   }
-
   async updateStatusOrder(req, res) {
     try {
       await queryMysql(`
@@ -50,6 +49,42 @@ class OrderController {
       res.json({ success: true, message: "Order status updated successfully" });
     } catch (error) {
       console.log(error);
+    }
+  }
+  async countOrder(req, res) {
+    try {
+      // Assuming queryMysql is a function that executes MySQL queries asynchronously
+      const result = await queryMysql(
+        `SELECT COUNT(DH_id) AS SoDonHang FROM DONHANG;`
+      );
+
+      // Assuming queryMysql returns an array of rows, we extract the first row
+      const numOrders = result[0].SoDonHang;
+
+      // Sending the response back
+      res.status(200).json({ numOrders });
+    } catch (error) {
+      // Handling errors
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+  async countOrderConfirm(req, res) {
+    try {
+      // Assuming queryMysql is a function that executes MySQL queries asynchronously
+      const result = await queryMysql(
+        `SELECT COUNT(DH_id) AS SoDonHang FROM DONHANG WHERE DH_trangThai = 'Chờ xác nhận';`
+      );
+
+      // Assuming queryMysql returns an array of rows, we extract the first row
+      const numOrdersConfirm = result[0].SoDonHang;
+      console.log(numOrdersConfirm);
+      // Sending the response back
+      res.status(200).json({ numOrdersConfirm });
+    } catch (error) {
+      // Handling errors
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
 }

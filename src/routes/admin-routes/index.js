@@ -16,13 +16,21 @@ router.get("/orders", orderController.getAllOrder);
 router.get("/ordersN", orderNController.getAllOrderN);
 router.get("/discounts", discountController.getAllDiscount);
 router.get("/static", productController.getProductStatic);
+router.get("/static-bancham", productController.getProductStaticBanCham);
+router.get("/orders-count", orderController.countOrder);
+router.get("/ordersConfirm-count", orderController.countOrderConfirm);
+router.get("/products-count", productController.countProduct);
+router.get("/users-count", usercontroller.countUser);
+router.get("/collect", productController.collectStatic);
 
+router.post("/user/update", usercontroller.getUser);
 router.post("/discount", discountController.createDiscount);
 router.post("/product", productController.createProduct);
 router.post("/product/update", productController.getProduct);
 router.post("/discount/update", discountController.getDiscount);
 router.post("/category", categoryController.uploadProductCategory);
 
+router.put("/user/update", usercontroller.updateCustomer);
 router.put("/discount/update", discountController.updateDiscount);
 router.put("/order/update", orderController.updateStatusOrder);
 router.put("/product/update", productController.updateProduct);

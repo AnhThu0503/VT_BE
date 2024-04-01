@@ -49,22 +49,7 @@ class ProductController {
       console.error(e);
     }
   }
-  async updateCustomer(req, res) {
-    try {
-      if (req.body?.ND_id && req.body?.name && req.body?.phone) {
-        const update_customer = await queryMysql(`update nguoi_dung set 
-                ND_ten='${req.body.name}',
-                ND_SDT='${req.body.phone}'
-                where ND_id=${req.body.ND_id}
-            `);
-        res.json(update_customer.affectedRows > 0 ? true : false);
-      } else {
-        res.json(false);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
+
   async updateProduct(req, res) {
     try {
       const id = req.body.SP_id;
@@ -232,6 +217,109 @@ class ProductController {
       return res
         .status(500)
         .json({ error: "Failed to retrieve product statistics" });
+    }
+  }
+  async getProductStaticBanCham(req, res) {
+    try {
+      // Execute the SQL query against the database to get the top 3 products
+      const productData = await queryMysql(`SELECT 
+        SANPHAM.SP_id,
+        SANPHAM.SP_ten,
+        SANPHAM.SP_soLuong AS SP_soLuong,
+        CHI_TIET_HDN.CTHDN_soLuong AS CTHDN_soLuong
+        FROM 
+            SANPHAM
+        JOIN 
+            CHI_TIET_HDN ON SANPHAM.SP_id = CHI_TIET_HDN.SP_id
+        WHERE 
+            ABS(SANPHAM.SP_soLuong - CHI_TIET_HDN.CTHDN_soLuong) <= 5
+        LIMIT 3;
+      `);
+
+      const productsOrder = [];
+
+      for (const product of productData) {
+        const getProduct = await queryMysql(
+          `SELECT * FROM CHI_TIET_DH WHERE SP_id =${product.SP_id}`
+        );
+
+        const inforProduct = await queryMysql(
+          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
+        );
+        let sum = 0;
+        for (const productDB of getProduct) {
+          sum += productDB.CTDH_soLuong;
+        }
+        productsOrder.push({
+          ten: inforProduct[0].SP_ten,
+          soluong: sum,
+        });
+      }
+
+      const productReceipt = [];
+      for (const product of productData) {
+        const getProduct = await queryMysql(
+          `SELECT * FROM CHI_TIET_HDN WHERE SP_id =${product.SP_id}`
+        );
+        const inforProduct = await queryMysql(
+          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
+        );
+
+        console.log(getProduct);
+        productReceipt.push({
+          ten: inforProduct[0].SP_ten,
+          soluong: getProduct[0].CTHDN_soLuong,
+        });
+      }
+
+      // Send the result as a response
+      return res.status(200).json({ productsOrder, productReceipt });
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(500)
+        .json({ error: "Failed to retrieve product statistics" });
+    }
+  }
+  async countProduct(req, res) {
+    try {
+      // Assuming queryMysql is a function that executes MySQL queries asynchronously
+      const result = await queryMysql(
+        `SELECT COUNT(SP_id) AS SoSanPham FROM SANPHAM;`
+      );
+
+      // Assuming queryMysql returns an array of rows, we extract the first row
+      const numProducts = result[0].SoSanPham;
+
+      // Sending the response back
+      res.status(200).json({ numProducts });
+    } catch (error) {
+      // Handling errors
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+  async collectStatic(req, res) {
+    try {
+      const { startDate, endDate } = req.query;
+      // Assuming 'queryMysql' is a function that executes SQL queries asynchronously
+      const doanhThu = await queryMysql(`
+        SELECT DATE_FORMAT(DH_ngayDat, '%m-%Y') AS Thang,
+               SUM(DH_tongTien) AS DoanhThu
+        FROM DONHANG
+        WHERE DH_trangThai = 'Đã nhận hàng'
+          AND DH_ngayDat BETWEEN '${startDate}' AND '${endDate}'
+        GROUP BY DATE_FORMAT(DH_ngayDat, '%m-%Y')
+        ORDER BY Thang;
+      `);
+
+      // Assuming you want to send 'doanhThu' data as JSON response
+      console.log("doanh thu>>>>>", doanhThu);
+      res.json(doanhThu);
+    } catch (error) {
+      console.error(error);
+      // Assuming you want to send an error response in case of failure
+      res.status(500).send("Internal Server Error");
     }
   }
 }

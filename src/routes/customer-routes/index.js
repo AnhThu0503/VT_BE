@@ -25,7 +25,9 @@ router.get("/cart/sum", cartController.sumItemCart);
 router.get("/customer", customerController.getCustomerInfo);
 router.get("/comments", commentController.getComments);
 router.get("/order-customer", orderController.getOrdersOfCustomer);
-
+router.get("/products-discount", productController.getProductDiscount);
+router.get("/products-discount-all", productController.getAllProductDiscount);
+router.get("/products-bestseller", productController.getAllProductBanChay);
 router.post("/products/search", productController.searchProduct);
 router.post("/order", orderController.createOrder);
 router.post("/login", loginController.handleLogin);
