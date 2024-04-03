@@ -10,9 +10,10 @@ const cartController = require("../../controllers/customer-controllers/cart");
 const orderController = require("../../controllers/customer-controllers/order");
 const customerController = require("../../controllers/customer-controllers/customer");
 const commentController = require("../../controllers/customer-controllers/commt");
-
+const blogController = require("../../controllers/customer-controllers/blog");
 const router = express.Router();
 
+router.get("/blogs", blogController.getAllBlog);
 router.get("/product-all", productController.getProductAll);
 router.get("/products", productController.getAllProduct);
 router.get("/product", productController.getProduct);

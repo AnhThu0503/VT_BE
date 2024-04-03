@@ -5,6 +5,7 @@ const usercontroller = require("../../controllers/admin-controllers/user");
 const orderController = require("../../controllers/admin-controllers/order");
 const discountController = require("../../controllers/admin-controllers/discount");
 const orderNController = require("../../controllers/admin-controllers/orderN");
+const blogController = require("../../controllers/admin-controllers/blog");
 const router = express.Router();
 
 router.get("/category-and-supplier", categoryController.getCategoryAndSupplier);
@@ -25,6 +26,7 @@ router.get("/collect", productController.collectStatic);
 
 router.post("/user/update", usercontroller.getUser);
 router.post("/discount", discountController.createDiscount);
+router.post("/blog", blogController.createBlog);
 router.post("/product", productController.createProduct);
 router.post("/product/update", productController.getProduct);
 router.post("/discount/update", discountController.getDiscount);
