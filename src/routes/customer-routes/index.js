@@ -13,6 +13,8 @@ const commentController = require("../../controllers/customer-controllers/commt"
 const blogController = require("../../controllers/customer-controllers/blog");
 const router = express.Router();
 
+router.get("/blog-detail", blogController.getBlog);
+router.get("/blogs-recent", blogController.getRecentBlog);
 router.get("/blogs", blogController.getAllBlog);
 router.get("/product-all", productController.getProductAll);
 router.get("/products", productController.getAllProduct);
@@ -29,12 +31,15 @@ router.get("/order-customer", orderController.getOrdersOfCustomer);
 router.get("/products-discount", productController.getProductDiscount);
 router.get("/products-discount-all", productController.getAllProductDiscount);
 router.get("/products-bestseller", productController.getAllProductBanChay);
+router.get("/blog/comment", blogController.getAllComments);
 router.post("/products/search", productController.searchProduct);
 router.post("/order", orderController.createOrder);
 router.post("/login", loginController.handleLogin);
 router.post("/users", registerController.createUser);
 router.post("/users/comment", commentController.comment);
 router.post("/cart/add", cartController.addToCart);
+router.post("/blog/comment", blogController.postComment);
+router.post("/blog/comment/reply", blogController.postCommentReply);
 
 // handle session online payment
 router.post("/paymentOnline", async (req, res) => {
@@ -62,6 +67,7 @@ router.post("/paymentOnline", async (req, res) => {
 
   res.json({ id: session.id });
 });
+
 router.put("/order/update", orderController.updateStatusOrder);
 router.put("/address", customerController.updateAddress);
 router.put("/customer", customerController.updateCustomer);

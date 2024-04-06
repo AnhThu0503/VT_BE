@@ -16,6 +16,12 @@ class BlogController {
                 '${currentDate}',
                 ${req.body.id_category_selected}
             )`);
+      for (let base64 of req.body.file_images) {
+        const response = await cloudinary.uploader.upload(base64);
+        let result = await queryMysql(
+          `insert into HINHANHBLOG(B_id,HAB_URL)value(${create_blog.insertId},'${response.url}')`
+        );
+      }
       res.json(true);
     } catch (e) {
       console.error(e);
