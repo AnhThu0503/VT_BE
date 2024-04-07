@@ -113,15 +113,57 @@ class BlogController {
 
   async getAllComments(req, res) {
     try {
-      const getAllCommentsQuery = `
-        SELECT BLB.*, ND.*
-        FROM BINHLUANBLOG AS BLB
-        INNER JOIN NGUOI_DUNG AS ND ON BLB.ND_id = ND.ND_id
-      `;
+      const id = req.query.B_id;
 
-      const comments = await queryMysql(getAllCommentsQuery);
-      console.log("comments blog", comments);
-      res.status(200).json({ comments });
+      const comments = await queryMysql(
+        `SELECT 
+                BLB_id,
+                BLB_ngayBL,
+                BLB_noiDung,
+                BLB.ND_id,
+                BLB.B_id,
+                ND.ND_SDT,
+                ND.ND_diaChi,
+                ND.ND_email,
+                ND.ND_gioiTinh,
+                ND.ND_matKhau,
+                ND.ND_ten
+            FROM 
+                BINHLUANBLOG AS BLB
+            JOIN 
+                NGUOI_DUNG AS ND ON BLB.ND_id = ND.ND_id
+            WHERE 
+                BLB.B_id = ${id}`
+      );
+
+      // Iterate over comments and fetch their replies
+      for (let comment of comments) {
+        let commentReplys = await queryMysql(
+          `SELECT 
+                    TLBLB_id,
+                    TLBLB_ngayBL,
+                    TLBLB_noiDung,
+                    TLBLB.ND_id,
+                    TLBLB.BLB_id,
+                    ND.ND_SDT,
+                    ND.ND_diaChi,
+                    ND.ND_email,
+                    ND.ND_gioiTinh,
+                    ND.ND_matKhau,
+                    ND.ND_ten
+                FROM 
+                    TRALOIBLB AS TLBLB
+                JOIN 
+                    NGUOI_DUNG AS ND ON TLBLB.ND_id = ND.ND_id
+                WHERE 
+                    TLBLB.BLB_id = ${comment.BLB_id}`
+        );
+        // Assign replies to comment
+        comment.replies = commentReplys;
+        console.log("    comment.replies", comment.replies);
+      }
+
+      res.json(comments);
     } catch (error) {
       console.error("Error retrieving comments:", error);
       res.status(500).json({ error: "Internal server error" });

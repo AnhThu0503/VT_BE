@@ -44,7 +44,6 @@ router.post("/blog/comment/reply", blogController.postCommentReply);
 // handle session online payment
 router.post("/paymentOnline", async (req, res) => {
   const { products } = req.body;
-
   const lineItems = products.map((product) => ({
     price_data: {
       currency: "vnd",
