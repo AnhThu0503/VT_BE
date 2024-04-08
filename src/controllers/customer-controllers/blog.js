@@ -3,11 +3,12 @@ const queryMysql = require("../../database/mysql.js");
 class BlogController {
   async getAllBlog(req, res) {
     try {
-      const blogs = await queryMysql(`select * from BLOG`);
-      const length = blogs.length;
-      for (let i = 0; i < length; i++) {
-        let blog = blogs[i];
+      const blogs = await queryMysql(
+        `SELECT BLOG.*, COUNT(BINHLUANBLOG.BLB_id) AS comment_count FROM BLOG LEFT JOIN BINHLUANBLOG ON BLOG.B_id = BINHLUANBLOG.B_id GROUP BY BLOG.B_id`
+      );
 
+      for (let i = 0; i < blogs.length; i++) {
+        let blog = blogs[i];
         let images = await queryMysql(
           `SELECT HAB_URL FROM HINHANHBLOG WHERE B_id=${blog.B_id}`
         );
@@ -17,30 +18,41 @@ class BlogController {
       res.json(blogs);
     } catch (e) {
       console.error(e);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
 
   async getRecentBlog(req, res) {
     try {
-      const recent_blogs =
-        await queryMysql(`SELECT B_id, B_tieuDe, B_ngayTao, DMSP_id
-      FROM BLOG
-      ORDER BY B_ngayTao DESC
-      LIMIT 2;`);
-      const length = recent_blogs.length;
-      for (let i = 0; i < length; i++) {
+      const recent_blogs = await queryMysql(`
+            SELECT B_id, B_tieuDe, B_ngayTao, DMSP_id
+            FROM BLOG
+            ORDER BY B_ngayTao DESC
+            LIMIT 2;
+        `);
+
+      for (let i = 0; i < recent_blogs.length; i++) {
         let blog = recent_blogs[i];
 
         let images = await queryMysql(
           `SELECT HAB_URL FROM HINHANHBLOG WHERE B_id=${blog.B_id}`
         );
         blog.image = images.length > 0 ? images[0].HAB_URL : "";
+
+        let commentCount = await queryMysql(
+          `SELECT COUNT(*) AS comment_count FROM BINHLUANBLOG WHERE B_id=${blog.B_id}`
+        );
+        blog.comment_count =
+          commentCount.length > 0 ? commentCount[0].comment_count : 0;
       }
+
       res.json(recent_blogs);
     } catch (e) {
       console.error(e);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
   async getBlog(req, res) {
     try {
       let blogs = await queryMysql(
@@ -85,10 +97,10 @@ class BlogController {
 
   async postComment(req, res) {
     try {
-      const { ND_id, B_id, BLB_noiDung, BLB_ngayBL } = req.body;
+      const { ND_id, B_id, BLB_noiDung, BLB_ngayBL, BLB_reply } = req.body;
       const createTableQuery = `
-      INSERT INTO BINHLUANBLOG (ND_id, B_id, BLB_noiDung, BLB_ngayBL)
-      VALUES (${ND_id}, ${B_id}, '${BLB_noiDung}', '${BLB_ngayBL}')`;
+      INSERT INTO BINHLUANBLOG (ND_id, B_id, BLB_noiDung, BLB_ngayBL,BLB_reply)
+      VALUES (${ND_id}, ${B_id}, '${BLB_noiDung}', '${BLB_ngayBL}',${BLB_reply})`;
 
       const data = await queryMysql(createTableQuery);
       console.log("BINHLUANBLOG table created successfully");
@@ -100,11 +112,9 @@ class BlogController {
 
   async postCommentReply(req, res) {
     try {
-      const { ND_id, BLB_id, BLB_noiDung, BLB_ngayBL } = req.body;
-      const createTableQuery = `INSERT INTO TRALOIBLB (ND_id, BLB_id, TLBLB_noiDung, TLBLB_ngayBL) VALUES (${ND_id}, ${BLB_id}, '${BLB_noiDung}', '${BLB_ngayBL}')`;
-
+      const { ND_id, B_id, BLB_noiDung, BLB_ngayBL, BLB_id } = req.body;
+      const createTableQuery = `INSERT INTO BINHLUANBLOG (ND_id, B_id,BLB_noiDung, BLB_ngayBL, BLB_reply) VALUES (${ND_id}, ${B_id}, '${BLB_noiDung}', '${BLB_ngayBL}',${BLB_id})`;
       const data = await queryMysql(createTableQuery);
-
       res.status(200).json(data);
     } catch (error) {
       console.error("Error creating BINHLUANBLOG table:", error);
@@ -133,31 +143,30 @@ class BlogController {
             JOIN 
                 NGUOI_DUNG AS ND ON BLB.ND_id = ND.ND_id
             WHERE 
-                BLB.B_id = ${id}`
+                BLB.B_id = ${id} AND BLB_reply=0`
       );
-
-      // Iterate over comments and fetch their replies
       for (let comment of comments) {
         let commentReplys = await queryMysql(
-          `SELECT 
-                    TLBLB_id,
-                    TLBLB_ngayBL,
-                    TLBLB_noiDung,
-                    TLBLB.ND_id,
-                    TLBLB.BLB_id,
-                    ND.ND_SDT,
-                    ND.ND_diaChi,
-                    ND.ND_email,
-                    ND.ND_gioiTinh,
-                    ND.ND_matKhau,
-                    ND.ND_ten
-                FROM 
-                    TRALOIBLB AS TLBLB
-                JOIN 
-                    NGUOI_DUNG AS ND ON TLBLB.ND_id = ND.ND_id
-                WHERE 
-                    TLBLB.BLB_id = ${comment.BLB_id}`
+          `SELECT
+              BLB_id,
+              BLB_ngayBL,
+              BLB_noiDung,
+              BLB.ND_id,
+              BLB.B_id,
+              ND.ND_SDT,
+              ND.ND_diaChi,
+              ND.ND_email,
+              ND.ND_gioiTinh,
+              ND.ND_matKhau,
+              ND.ND_ten
+            FROM
+                BINHLUANBLOG AS BLB
+            JOIN
+                NGUOI_DUNG AS ND ON BLB.ND_id = ND.ND_id
+            WHERE
+                BLB.BLB_reply = ${comment.BLB_id}`
         );
+
         // Assign replies to comment
         comment.replies = commentReplys;
         console.log("    comment.replies", comment.replies);
