@@ -61,6 +61,21 @@ class ProductController {
     }
     res.json({ products, category: categorys[0] });
   }
+  async getTotalSalesProduct(req, res) {
+    try {
+      const query = `SELECT COUNT(*) AS total_sales
+                       FROM CHI_TIET_DH
+                       WHERE SP_id = ${req.query.SP_id}`;
+
+      const products = await queryMysql(query); // Assuming queryMysql is defined elsewhere
+      res.status(200).json({ total_sales: products[0].total_sales });
+    } catch (error) {
+      console.error("Error retrieving total sales:", error);
+      res
+        .status(500)
+        .json({ error: "An error occurred while retrieving total sales." });
+    }
+  }
 
   async getProduct(req, res) {
     let products = await queryMysql(

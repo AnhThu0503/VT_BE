@@ -57,7 +57,7 @@ class DiscountController {
       UPDATE KHUYENMAI
         SET 
           KM_noiDung = '${req.body.KM_noiDung}',
-          SP_id = ${req.body.SP_id},
+          SP_id = ${req.body.id_product_selected},
           KM_ngayBatDau = '${req.body.KM_ngayBatDau}',
           KM_ngayKetThuc = '${req.body.KM_ngayKetThuc}',
           KM_mucGiamGia = ${req.body.KM_mucGiamGia}

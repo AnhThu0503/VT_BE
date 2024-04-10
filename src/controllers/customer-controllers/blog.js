@@ -61,6 +61,7 @@ class BlogController {
       if (blogs.length === 0) {
         return res.status(404).json({ error: "Blog not found" });
       }
+
       let categorys = await queryMysql(
         `select * from SANPHAM where DMSP_id=${blogs[0].DMSP_id}`
       );

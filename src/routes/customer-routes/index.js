@@ -13,6 +13,7 @@ const commentController = require("../../controllers/customer-controllers/commt"
 const blogController = require("../../controllers/customer-controllers/blog");
 const router = express.Router();
 
+router.get("/product-totalSales", productController.getTotalSalesProduct);
 router.get("/blog-detail", blogController.getBlog);
 router.get("/blogs-recent", blogController.getRecentBlog);
 router.get("/blogs", blogController.getAllBlog);
@@ -34,6 +35,7 @@ router.get("/products-bestseller", productController.getAllProductBanChay);
 router.get("/blog/comment", blogController.getAllComments);
 router.post("/products/search", productController.searchProduct);
 router.post("/order", orderController.createOrder);
+router.post("/order/check", orderController.isOrderOk);
 router.post("/login", loginController.handleLogin);
 router.post("/users", registerController.createUser);
 router.post("/users/comment", commentController.comment);

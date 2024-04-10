@@ -63,7 +63,8 @@ class ProductController {
           SP_soLuong = ${req.body.SP_soLuong},
           SP_trongLuong = ${req.body.SP_trongLuong},
           SP_donViTinh = '${req.body.SP_donViTinh}',
-          SP_moTa = '${req.body.SP_moTa}'
+          SP_moTa = '${req.body.SP_moTa}',
+          DMSP_id = ${req.body.id_category_selected}
         WHERE SP_id = ${id}
       `);
 
@@ -160,7 +161,7 @@ class ProductController {
   async getAllProductSelect(req, res) {
     try {
       const products = await queryMysql(`select * from sanpham`);
-      console.log("product select", products);
+      console.log("------------product select--------------", products);
       res.json(products);
     } catch (e) {
       console.error(e);
@@ -171,7 +172,7 @@ class ProductController {
     try {
       // Execute the SQL query against the database to get the top 3 products
       const productData = await queryMysql(
-        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC LIMIT 3;"
+        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC LIMIT 5;"
       );
 
       const productsOrder = [];
@@ -233,7 +234,7 @@ class ProductController {
             CHI_TIET_HDN ON SANPHAM.SP_id = CHI_TIET_HDN.SP_id
         WHERE 
             ABS(SANPHAM.SP_soLuong - CHI_TIET_HDN.CTHDN_soLuong) <= 5
-        LIMIT 3;
+        LIMIT 5;
       `);
 
       const productsOrder = [];

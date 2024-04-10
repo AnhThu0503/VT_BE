@@ -119,6 +119,28 @@ class OrderController {
       console.log(error);
     }
   }
+
+  async isOrderOk(req, res) {
+    try {
+      const { sanpham } = req.body;
+      let tmp = true;
+      for (const product of sanpham) {
+        const oldQuantityProduct = await queryMysql(`
+          SELECT SP_soLuong
+          FROM SANPHAM
+          WHERE SP_id = ${product.SP_id}
+        `);
+        const oldQuantity = oldQuantityProduct[0].SP_soLuong;
+
+        if (oldQuantity <= 1) {
+          tmp = false;
+        }
+      }
+      res.json(tmp);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
 
 module.exports = new OrderController();
