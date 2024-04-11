@@ -49,11 +49,49 @@ class ProductController {
       console.error(e);
     }
   }
-
+  async deleteImageProduct(req, res) {
+    try {
+      const id = req.query.HA_id; // Access HA_id from the request body
+      await queryMysql(`
+            DELETE FROM HINHANH
+            WHERE HA_id = ${id}
+        `);
+      res.json("Xoa thanh cong");
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Failed to delete image" });
+    }
+  }
+  async countImage(req, res) {
+    try {
+      const id = req.query.product_id; // Retrieve product_id from the request body
+      const count = await queryMysql(`
+            SELECT COUNT(HA_id) AS image_count
+            FROM HINHANH
+            WHERE SP_id = ${id};
+        `);
+      const image_count = count[0].image_count;
+      res.status(200).json({ image_count });
+    } catch (e) {
+      console.log(e);
+      res.status(500).json({ error: "Failed to count images" });
+    }
+  }
+  async countProduct(req, res) {
+    try {
+      const result = await queryMysql(
+        `SELECT COUNT(SP_id) AS SoSanPham FROM SANPHAM;`
+      );
+      const numProducts = result[0].SoSanPham;
+      res.status(200).json({ numProducts });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
   async updateProduct(req, res) {
     try {
       const id = req.body.SP_id;
-      console.log("nsx", req.body.SP_NSX);
       const update_product = await queryMysql(`
         UPDATE SANPHAM
         SET 
@@ -74,6 +112,32 @@ class ProductController {
           G_thoiGia = ${req.body.G_thoiGia}
         WHERE SP_id = ${id}
       `);
+      const images = await queryMysql(
+        `SELECT * FROM HINHANH WHERE SP_id=${id}`
+      );
+      const file_images = req.body.file_images;
+      for (let i = 0; i < images.length; i++) {
+        let image = images[i];
+        for (let j = 0; j < file_images.length; j++) {
+          let file_image = file_images[j];
+          if (image.HA_id === file_image.HA_id) {
+            if (image.HA_URL !== file_image.HA_URL) {
+              const response = await cloudinary.uploader.upload(
+                file_image.HA_URL
+              );
+              await queryMysql(
+                `UPDATE HINHANH SET HA_URL='${response.url}' WHERE HA_id=${file_image.HA_id}`
+              );
+            }
+          }
+        }
+      }
+      for (let base64 of req.body.file_imagesadd) {
+        const response = await cloudinary.uploader.upload(base64);
+        let result = await queryMysql(
+          `insert into hinhanh(SP_id,HA_URL)value(${id},'${response.url}')`
+        );
+      }
 
       res.json("update success");
     } catch (error) {
@@ -148,11 +212,14 @@ class ProductController {
       const price = await queryMysql(`SELECT *
         FROM GIA
         WHERE SP_id = ${req.body.SP_id}`);
-      const id = product[0].DMSP_id; // Access DMSP_id from the first row of the product result
+      const id = product[0].DMSP_id;
       const category = await queryMysql(
         `SELECT * FROM DANHMUCSANPHAM WHERE DMSP_id = ${id}`
-      ); // Fix interpolation syntax
-      res.json({ product, price, category });
+      );
+      const images = await queryMysql(
+        `SELECT * FROM HINHANH WHERE SP_id = ${req.body.SP_id}`
+      );
+      res.json({ product, price, category, images });
     } catch (error) {
       console.log(error);
     }
@@ -284,18 +351,12 @@ class ProductController {
   }
   async countProduct(req, res) {
     try {
-      // Assuming queryMysql is a function that executes MySQL queries asynchronously
       const result = await queryMysql(
         `SELECT COUNT(SP_id) AS SoSanPham FROM SANPHAM;`
       );
-
-      // Assuming queryMysql returns an array of rows, we extract the first row
       const numProducts = result[0].SoSanPham;
-
-      // Sending the response back
       res.status(200).json({ numProducts });
     } catch (error) {
-      // Handling errors
       console.error("Error:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
