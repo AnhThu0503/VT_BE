@@ -14,7 +14,7 @@ class CategoryController {
     const categorys = await queryMysql(`select * from danhmucsanpham`);
     for (let cate of categorys) {
       let products = await queryMysql(
-        `select * from sanpham where DMSP_id=${cate.DMSP_id} limit 4`
+        `select * from sanpham where DMSP_id=${cate.DMSP_id} AND SP_HSD >= CURRENT_DATE limit 4`
       );
       for (let product of products) {
         let images = await queryMysql(

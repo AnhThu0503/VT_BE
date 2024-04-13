@@ -63,7 +63,7 @@ class BlogController {
       }
 
       let categorys = await queryMysql(
-        `select * from SANPHAM where DMSP_id=${blogs[0].DMSP_id}`
+        `select * from SANPHAM where DMSP_id=${blogs[0].DMSP_id} AND SP_HSD >= CURRENT_DATE`
       );
       for (let product of categorys) {
         let images = await queryMysql(

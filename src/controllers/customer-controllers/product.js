@@ -8,7 +8,9 @@ class ProductController {
   }
   async getProductAll(req, res) {
     try {
-      const products = await queryMysql(`SELECT * FROM sanpham`);
+      const products = await queryMysql(`
+        SELECT * FROM sanpham WHERE SP_HSD >= CURDATE()
+      `);
       const length = products.length;
 
       for (let i = 0; i < length; i++) {
@@ -39,7 +41,7 @@ class ProductController {
 
   async getProductOfCatetory(req, res) {
     let products = await queryMysql(
-      `select * from sanpham where DMSP_id=${req.query.DMSP_id}`
+      `select * from sanpham where DMSP_id=${req.query.DMSP_id} AND SP_HSD SP_HSD >= CURDATE()`
     );
     let categorys = await queryMysql(
       `select * from danhmucsanpham where DMSP_id=${req.query.DMSP_id}`
@@ -65,7 +67,7 @@ class ProductController {
     try {
       const query = `SELECT COUNT(*) AS total_sales
                        FROM CHI_TIET_DH
-                       WHERE SP_id = ${req.query.SP_id}`;
+                       WHERE SP_id = ${req.query.SP_id} `;
 
       const products = await queryMysql(query); // Assuming queryMysql is defined elsewhere
       res.status(200).json({ total_sales: products[0].total_sales });
@@ -133,7 +135,7 @@ class ProductController {
       KHUYENMAI.KM_mucGiamGia AS km_mucGiamGia
       FROM SANPHAM
       LEFT JOIN KHUYENMAI ON SANPHAM.SP_id = KHUYENMAI.SP_id AND CURDATE() BETWEEN KHUYENMAI.KM_ngayBatDau AND KHUYENMAI.KM_ngayKetThuc
-      WHERE SANPHAM.SP_ten LIKE '%${query}%';
+      WHERE SP_HSD >= CURDATE() AND SANPHAM.SP_ten LIKE '%${query}%';
 
       `);
 
@@ -150,8 +152,8 @@ class ProductController {
       const products = await queryMysql(`
       SELECT sanpham.*
       FROM sanpham
-      JOIN khuyenmai ON sanpham.SP_id = khuyenmai.SP_id
-      WHERE CURDATE() BETWEEN khuyenmai.KM_ngayBatDau AND khuyenmai.KM_ngayKetThuc
+      JOIN khuyenmai ON sanpham.SP_id = khuyenmai.SP_id 
+      WHERE SP_HSD >= CURDATE() AND CURDATE() BETWEEN khuyenmai.KM_ngayBatDau AND khuyenmai.KM_ngayKetThuc 
       LIMIT 4;
       
       `);
@@ -197,9 +199,11 @@ class ProductController {
     try {
       // Query to select products with associated discounts
       const products = await queryMysql(`
-        SELECT sanpham.*
-        FROM sanpham
-        JOIN khuyenmai ON sanpham.SP_id = khuyenmai.SP_id;
+      SELECT sanpham.*
+      FROM sanpham 
+      JOIN khuyenmai ON sanpham.SP_id = khuyenmai.SP_id
+      WHERE sanpham.SP_HSD >= CURRENT_DATE;
+      
       `);
 
       // Loop through each product to fetch additional data
@@ -251,7 +255,7 @@ class ProductController {
           `SELECT * FROM CHI_TIET_HDN WHERE SP_id = ${product.SP_id}`
         );
         const inforProduct = await queryMysql(
-          `SELECT SP_id, SP_ten, SP_trongLuong, SP_donViTinh, DMSP_id FROM SANPHAM WHERE SP_id = ${product.SP_id}`
+          `SELECT SP_id, SP_ten, SP_trongLuong, SP_donViTinh, DMSP_id FROM SANPHAM WHERE SP_id = ${product.SP_id} AND SP_HSD >= CURRENT_DATE`
         );
 
         productReceipt.push({

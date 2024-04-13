@@ -6,8 +6,10 @@ const orderController = require("../../controllers/admin-controllers/order");
 const discountController = require("../../controllers/admin-controllers/discount");
 const orderNController = require("../../controllers/admin-controllers/orderN");
 const blogController = require("../../controllers/admin-controllers/blog");
+const supplierController = require("../../controllers/admin-controllers/supplier");
 const router = express.Router();
 
+router.get("/supplier", supplierController.getAllSupplier);
 router.get("/blogs", blogController.getAllBlog);
 router.get("/category-and-supplier", categoryController.getCategoryAndSupplier);
 router.get("/product", productController.getProductAll);
@@ -34,6 +36,7 @@ router.post("/product/update", productController.getProduct);
 router.post("/discount/update", discountController.getDiscount);
 router.post("/category", categoryController.uploadProductCategory);
 router.post("/blog/image", blogController.uploadImage);
+router.post("/supplier", supplierController.uploadSupplier);
 
 router.put("/blog/update", blogController.updateBlog);
 router.put("/user/update", usercontroller.updateCustomer);
@@ -41,6 +44,7 @@ router.put("/discount/update", discountController.updateDiscount);
 router.put("/order/update", orderController.updateStatusOrder);
 router.put("/product/update", productController.updateProduct);
 
+router.delete("/supplier/delete", supplierController.deleteSupplier);
 router.delete("/image/delete", productController.deleteImageProduct);
 router.delete("/blog/delete", blogController.deleteBlog);
 router.delete("/user/delete", usercontroller.deleteUser);

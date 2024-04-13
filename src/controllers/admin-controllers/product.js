@@ -44,9 +44,10 @@ class ProductController {
           `insert into hinhanh(SP_id,HA_URL)value(${create_product.insertId},'${response.url}')`
         );
       }
-      res.json(true);
-    } catch (e) {
-      console.error(e);
+      return res.status(200).json({ message: "Order created successfully" });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      return res.status(500).json({ error: "Failed to create order" });
     }
   }
   async deleteImageProduct(req, res) {
@@ -101,7 +102,7 @@ class ProductController {
           SP_soLuong = ${req.body.SP_soLuong},
           SP_trongLuong = ${req.body.SP_trongLuong},
           SP_donViTinh = '${req.body.SP_donViTinh}',
-          SP_moTa = '${req.body.SP_moTa}',
+          SP_moTa = '${req.body.moTa}',
           DMSP_id = ${req.body.id_category_selected}
         WHERE SP_id = ${id}
       `);
@@ -182,7 +183,7 @@ class ProductController {
         );
         product.price = prices.length > 0 ? prices[0].G_thoiGia : 0;
         product.G_giaBanDau = prices.length > 0 ? prices[0].G_giaBanDau : 0;
-        product.image = images.length > 0 ? images[0].HA_URL : "";
+        product.images = images.reverse();
         let product_discount = await queryMysql(
           `SELECT * FROM khuyenmai WHERE CURDATE() BETWEEN KM_ngayBatDau AND KM_ngayKetThuc AND SP_id=${product.SP_id}`
         );
@@ -227,8 +228,9 @@ class ProductController {
 
   async getAllProductSelect(req, res) {
     try {
-      const products = await queryMysql(`select * from sanpham`);
-      console.log("------------product select--------------", products);
+      const products = await queryMysql(
+        `select * from sanpham where SP_HSD >= CURRENT_DATE`
+      );
       res.json(products);
     } catch (e) {
       console.error(e);
@@ -376,7 +378,6 @@ class ProductController {
       `);
 
       // Assuming you want to send 'doanhThu' data as JSON response
-      console.log("doanh thu>>>>>", doanhThu);
       res.json(doanhThu);
     } catch (error) {
       console.error(error);
