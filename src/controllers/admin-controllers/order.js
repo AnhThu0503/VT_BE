@@ -24,6 +24,7 @@ class OrderController {
               detailOrderProduct.push({
                 ...product,
                 soluong: detail.CTDH_soLuong,
+                giaBan: detail.CTDH_giaBan,
               });
             })
           );

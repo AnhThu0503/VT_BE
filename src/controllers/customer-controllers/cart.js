@@ -80,10 +80,11 @@ class CartController {
 
   async sumItemCart(req, res) {
     try {
-      const remove_item = await queryMysql(
-        `select sum(soLuong) as sum from sp_giohang, giohang where giohang.GH_id=sp_giohang.GH_id and ND_id=${req.query.ND_id}`
-      );
-      res.json(remove_item[0].sum);
+      // const remove_item = await queryMysql(
+      //   `select sum(soLuong) as sum from sp_giohang, giohang where giohang.GH_id=sp_giohang.GH_id and ND_id=${req.query.ND_id}`
+      // );
+      // res.json(remove_item[0].sum);
+      res.json(0);
     } catch (e) {
       console.error(e);
     }

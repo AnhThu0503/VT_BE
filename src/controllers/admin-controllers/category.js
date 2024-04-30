@@ -16,6 +16,8 @@ class CategoryController {
     res.json(categorys);
   }
   async uploadProductCategory(req, res) {
+    if (!req.body.name) res.json(false);
+
     try {
       const category = await queryMysql(
         `insert into DANHMUCSANPHAM(DMSP_ten)value( '${req.body.name}')`

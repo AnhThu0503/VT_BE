@@ -41,7 +41,7 @@ class ProductController {
 
   async getProductOfCatetory(req, res) {
     let products = await queryMysql(
-      `select * from sanpham where DMSP_id=${req.query.DMSP_id} AND SP_HSD SP_HSD >= CURDATE()`
+      `select * from sanpham where DMSP_id=${req.query.DMSP_id} AND SP_HSD >= CURDATE()`
     );
     let categorys = await queryMysql(
       `select * from danhmucsanpham where DMSP_id=${req.query.DMSP_id}`
@@ -202,7 +202,7 @@ class ProductController {
       SELECT sanpham.*
       FROM sanpham 
       JOIN khuyenmai ON sanpham.SP_id = khuyenmai.SP_id
-      WHERE sanpham.SP_HSD >= CURRENT_DATE;
+      WHERE sanpham.SP_HSD >= CURRENT_DATE AND CURDATE() BETWEEN khuyenmai.KM_ngayBatDau AND khuyenmai.KM_ngayKetThuc;
       
       `);
 

@@ -7,11 +7,15 @@ class OrderController {
         `INSERT INTO DONHANG (ND_id, DH_tongTien, DH_ngayDat, DH_trangthai, DH_phuongThucTT) VALUES (${req.body.ND_id}, ${req.body.tongtien}, CURDATE(), '${req.body.trangthai}', '${req.body.PTTT}')`
       );
       const orderId = order.insertId;
-
+      console.log("============product", req.body.sanpham);
       for (const product of req.body.sanpham) {
+        let giaBan = product.discount
+          ? product.G_thoiGia - product.discount.KM_mucGiamGia
+          : product.G_thoiGia;
+        console.log("giaBan", giaBan);
         const orderDetail = await queryMysql(`
-          INSERT INTO CHI_TIET_DH (DH_id, SP_id, CTDH_soLuong)
-          VALUES (${orderId}, ${product.SP_id}, ${product.soLuong})
+          INSERT INTO CHI_TIET_DH (DH_id, SP_id, CTDH_soLuong,CTDH_giaBan)
+          VALUES (${orderId}, ${product.SP_id}, ${product.soLuong},${giaBan})
         `);
 
         const oldQuantityProduct = await queryMysql(`
@@ -65,7 +69,7 @@ class OrderController {
     try {
       if (req.query?.ND_id) {
         const orders = await queryMysql(
-          `SELECT * FROM DONHANG WHERE ND_id=${req.query.ND_id}`
+          `SELECT * FROM DONHANG WHERE ND_id=${req.query.ND_id} ORDER BY DH_Id DESC`
         );
 
         let arrOrders = [];
@@ -89,6 +93,8 @@ class OrderController {
                 return {
                   ...product[0], // Assuming product is an array, taking the first item
                   soluong: detail.CTDH_soLuong,
+                  giaBan: detail.CTDH_giaBan,
+
                   hinhanh: images.length > 0 ? images[0].HA_URL : null,
                 };
               })

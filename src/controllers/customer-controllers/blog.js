@@ -98,16 +98,14 @@ class BlogController {
 
   async postComment(req, res) {
     try {
-      const { ND_id, B_id, BLB_noiDung, BLB_ngayBL, BLB_reply } = req.body;
-      const createTableQuery = `
-      INSERT INTO BINHLUANBLOG (ND_id, B_id, BLB_noiDung, BLB_ngayBL,BLB_reply)
-      VALUES (${ND_id}, ${B_id}, '${BLB_noiDung}', '${BLB_ngayBL}',${BLB_reply})`;
+      const comment = await queryMysql(`
+        INSERT INTO BINHLUANBLOG (ND_id, B_id, BLB_noiDung, BLB_ngayBL, BLB_reply)
+        VALUES (${req.body.ND_id}, ${req.body.B_id}, '${req.body.BLB_noiDung}', '${req.body.BLB_ngayBL}', '${req.body.BLB_reply}')`);
 
-      const data = await queryMysql(createTableQuery);
-      console.log("BINHLUANBLOG table created successfully");
-      res.status(200).json(data);
-    } catch (error) {
-      console.error("Error creating BINHLUANBLOG table:", error);
+      res.json({ success: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 

@@ -47,13 +47,22 @@ class LoginController {
       const count_cart = await queryMysql(
         `select count(GH_id) as value from giohang where ND_id=${users[0].ND_id}`
       );
+      let numberProductToCart = 0;
+      numberProductToCart = await queryMysql(
+        `select sum(soLuong) as sum from sp_giohang, giohang where giohang.GH_id=sp_giohang.GH_id and ND_id=${users[0].ND_id}`
+      );
+      console.log("remove_item", users[0].ND_id, numberProductToCart);
       if (count_cart[0].value === 0) {
         const create_cart = await queryMysql(
           `insert into giohang(ND_id)value(${users[0].ND_id})`
         );
       }
+      //  users: users[0], numberProductToCart
       if (users.length === 1) {
-        res.json(users[0]);
+        res.json({
+          user: users,
+          numberProductToCart: numberProductToCart[0],
+        });
       } else {
         res.json(false);
       }

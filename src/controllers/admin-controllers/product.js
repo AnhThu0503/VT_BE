@@ -8,7 +8,6 @@ class ProductController {
         await queryMysql(`insert into HOADONNHAP(NCC_id,HDN_noiDung,HDN_tongTien,HDN_ngayNhap)value(
                 ${req.body.id_supplier_selected},
                 '${req.body.noiDung}',
-                ${req.body.tongTien},
                 '${req.body.ngayNhap}'
             )`);
       const create_product =
@@ -169,7 +168,11 @@ class ProductController {
   }
   async getProductAll(req, res) {
     try {
-      const products = await queryMysql(`SELECT * FROM sanpham`);
+      const products = await queryMysql(`
+            SELECT * FROM sanpham
+            ORDER BY SP_HSD ASC
+        `);
+
       const length = products.length;
 
       for (let i = 0; i < length; i++) {
@@ -240,11 +243,16 @@ class ProductController {
   async getProductStatic(req, res) {
     try {
       // Execute the SQL query against the database to get the top 3 products
-      const productData = await queryMysql(
-        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC LIMIT 5;"
-      );
+      const productData = await queryMysql(`
+            SELECT SP_id, COUNT(*) AS quantity_count 
+            FROM CHI_TIET_DH 
+            GROUP BY SP_id 
+            ORDER BY quantity_count DESC 
+            LIMIT 6
+        `);
 
       const productsOrder = [];
+      let numStock = 0; // Change const to let
 
       for (const product of productData) {
         const getProduct = await queryMysql(
@@ -254,10 +262,12 @@ class ProductController {
         const inforProduct = await queryMysql(
           `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
         );
+
         let sum = 0;
         for (const productDB of getProduct) {
           sum += productDB.CTDH_soLuong;
         }
+        numStock = sum; // Assign sum to sl
         productsOrder.push({
           ten: inforProduct[0].SP_ten,
           soluong: sum,
@@ -273,10 +283,9 @@ class ProductController {
           `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
         );
 
-        console.log(getProduct);
         productReceipt.push({
           ten: inforProduct[0].SP_ten,
-          soluong: getProduct[0].CTHDN_soLuong,
+          soluong: getProduct[0].CTHDN_soLuong - numStock, // Calculate the difference
         });
       }
 
@@ -289,24 +298,69 @@ class ProductController {
         .json({ error: "Failed to retrieve product statistics" });
     }
   }
+
+  async getProductStock(req, res) {
+    try {
+      // Execute the SQL query against the database to get products with quantity >= 1
+      const productData = await queryMysql(`
+        SELECT * FROM SANPHAM WHERE SP_soLuong >= 1 AND SP_HSD >= CURDATE()
+      `);
+
+      // Initialize an array to store product receipts
+      const productReceipt = [];
+
+      // Loop through each product and retrieve additional information
+      for (const product of productData) {
+        // Retrieve product information from SANPHAM table based on SP_id
+        const inforProduct = await queryMysql(
+          `SELECT SP_ten, SP_soLuong FROM SANPHAM WHERE SP_id = ${product.SP_id}`
+        );
+
+        // Ensure the product information is valid before pushing to productReceipt
+        if (inforProduct && inforProduct.length > 0) {
+          productReceipt.push({
+            ten: inforProduct[0].SP_ten,
+            soluong: inforProduct[0].SP_soLuong,
+          });
+        }
+      }
+
+      // Log the productReceipt for debugging
+      console.log("productReceipt", productReceipt);
+
+      // Send the productReceipt as a response
+      return res.status(200).json({ productReceipt });
+    } catch (error) {
+      // Log the error for debugging
+      console.log(error);
+
+      // Send an error response
+      return res
+        .status(500)
+        .json({ error: "Failed to retrieve product statistics" });
+    }
+  }
+
   async getProductStaticBanCham(req, res) {
     try {
       // Execute the SQL query against the database to get the top 3 products
-      const productData = await queryMysql(`SELECT 
-        SANPHAM.SP_id,
-        SANPHAM.SP_ten,
-        SANPHAM.SP_soLuong AS SP_soLuong,
-        CHI_TIET_HDN.CTHDN_soLuong AS CTHDN_soLuong
-        FROM 
-            SANPHAM
-        JOIN 
-            CHI_TIET_HDN ON SANPHAM.SP_id = CHI_TIET_HDN.SP_id
-        WHERE 
-            ABS(SANPHAM.SP_soLuong - CHI_TIET_HDN.CTHDN_soLuong) <= 5
-        LIMIT 5;
+      const productData = await queryMysql(` SELECT 
+      SANPHAM.SP_id,
+      SANPHAM.SP_ten,
+      SANPHAM.SP_soLuong AS SP_soLuong,
+      CHI_TIET_HDN.CTHDN_soLuong AS CTHDN_soLuong
+  FROM 
+      SANPHAM
+  JOIN 
+      CHI_TIET_HDN ON SANPHAM.SP_id = CHI_TIET_HDN.SP_id
+  WHERE 
+      ABS(CHI_TIET_HDN.CTHDN_soLuong - SANPHAM.SP_soLuong) <= 5
+  ORDER BY ABS(CHI_TIET_HDN.CTHDN_soLuong - SANPHAM.SP_soLuong) ASC
+  LIMIT 6
       `);
 
       const productsOrder = [];
+      let numStock = 0; // Change const to let
 
       for (const product of productData) {
         const getProduct = await queryMysql(
@@ -320,6 +374,7 @@ class ProductController {
         for (const productDB of getProduct) {
           sum += productDB.CTDH_soLuong;
         }
+        numStock = sum;
         productsOrder.push({
           ten: inforProduct[0].SP_ten,
           soluong: sum,
@@ -338,11 +393,12 @@ class ProductController {
         console.log(getProduct);
         productReceipt.push({
           ten: inforProduct[0].SP_ten,
-          soluong: getProduct[0].CTHDN_soLuong,
+          soluong: getProduct[0].CTHDN_soLuong - numStock,
         });
       }
 
       // Send the result as a response
+      console.log("productReceipt productReceipt", productReceipt);
       return res.status(200).json({ productsOrder, productReceipt });
     } catch (error) {
       console.log(error);
@@ -363,25 +419,56 @@ class ProductController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+  async countProductHSD(req, res) {
+    try {
+      const result = await queryMysql(
+        `SELECT COUNT(SP_id) AS SoSanPham FROM SANPHAM WHERE SP_HSD < CURRENT_DATE;`
+      );
+      const numProducts = result[0].SoSanPham;
+      console.log("numhsd", numProducts);
+      res.status(200).json({ numProducts });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
   async collectStatic(req, res) {
     try {
       const { startDate, endDate } = req.query;
-      // Assuming 'queryMysql' is a function that executes SQL queries asynchronously
-      const doanhThu = await queryMysql(`
-        SELECT DATE_FORMAT(DH_ngayDat, '%m-%Y') AS Thang,
-               SUM(DH_tongTien) AS DoanhThu
+
+      // Lấy doanh thu từ CSDL
+      const revenueData = await queryMysql(`
+        SELECT DATE_FORMAT(DH_ngayDat, '%Y-%m-%d') AS Ngay,
+        SUM(DH_tongTien) AS DoanhThu
         FROM DONHANG
         WHERE DH_trangThai = 'Đã nhận hàng'
-          AND DH_ngayDat BETWEEN '${startDate}' AND '${endDate}'
-        GROUP BY DATE_FORMAT(DH_ngayDat, '%m-%Y')
-        ORDER BY Thang;
+        AND DH_ngayDat BETWEEN '${startDate}' AND '${endDate}'
+        GROUP BY DATE_FORMAT(DH_ngayDat, '%Y-%m-%d')
+        ORDER BY Ngay;
       `);
 
-      // Assuming you want to send 'doanhThu' data as JSON response
-      res.json(doanhThu);
+      // Tạo danh sách toàn bộ các ngày từ startDate đến endDate
+      const dateList = [];
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= new Date(endDate)) {
+        dateList.push(currentDate.toISOString().split("T")[0]);
+        currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+      }
+
+      // Tạo mảng dữ liệu kết quả
+      const revenueArray = dateList.map((date) => {
+        const revenueEntry = revenueData.find((entry) => entry.Ngay === date);
+        return {
+          ngay: date,
+          doanhThu: revenueEntry ? revenueEntry.DoanhThu : 0,
+        };
+      });
+      console.log("revenueArray", revenueArray);
+      res.json({ revenueArray });
     } catch (error) {
       console.error(error);
-      // Assuming you want to send an error response in case of failure
       res.status(500).send("Internal Server Error");
     }
   }

@@ -5,9 +5,11 @@ class SupplierController {
     res.json(suppliers);
   }
   async uploadSupplier(req, res) {
+    if (!req.body.name || !req.body.address) res.json(false);
+
     try {
       const supplier = await queryMysql(
-        `insert into NHACUNGCAP(NCC_ten,NCC_diaChi)value( '${req.body.name}','${req.body.address}')`
+        `insert into NHACUNGCAP(NCC_ten,NCC_diaChi)value('${req.body.name}','${req.body.address}')`
       );
       res.json(true);
     } catch (error) {

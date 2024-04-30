@@ -20,10 +20,13 @@ router.get("/orders", orderController.getAllOrder);
 router.get("/ordersN", orderNController.getAllOrderN);
 router.get("/discounts", discountController.getAllDiscount);
 router.get("/static", productController.getProductStatic);
+router.get("/static-stock", productController.getProductStock);
 router.get("/static-bancham", productController.getProductStaticBanCham);
 router.get("/orders-count", orderController.countOrder);
 router.get("/ordersConfirm-count", orderController.countOrderConfirm);
 router.get("/products-count", productController.countProduct);
+router.get("/products-count-hsd", productController.countProductHSD);
+
 router.get("/users-count", usercontroller.countUser);
 router.get("/collect", productController.collectStatic);
 router.get("/image/count", productController.countImage);
