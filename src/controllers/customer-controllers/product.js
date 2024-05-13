@@ -84,7 +84,7 @@ class ProductController {
       `select * from sanpham where SP_id=${req.query.SP_id}`
     );
     let relate_products = await queryMysql(
-      `select * from sanpham where SP_id!=${req.query.SP_id} and DMSP_id=${products[0].DMSP_id} limit 5`
+      `select * from sanpham where SP_id!=${req.query.SP_id} and SP_HSD >= CURDATE() and DMSP_id=${products[0].DMSP_id} limit 5  `
     );
     for (let product of relate_products) {
       let images = await queryMysql(
@@ -182,10 +182,6 @@ class ProductController {
         // Assign discount data to the product
         product.discount =
           productDiscount.length > 0 ? productDiscount[0] : null;
-
-        console.log("-------------------------------");
-        console.log("productDiscount", productDiscount);
-        console.log("product discount", product.discount);
       }
 
       // Send the products with associated data as response
@@ -246,26 +242,31 @@ class ProductController {
       const products = [];
       // Fetch all products with their quantity counts
       const productData = await queryMysql(
-        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC LIMIT 4;"
+        "SELECT SP_id, COUNT(*) AS quantity_count FROM CHI_TIET_DH GROUP BY SP_id ORDER BY quantity_count DESC"
       );
 
       const productReceipt = [];
+      console.log("product data", productData);
+      let j = 0;
       for (const product of productData) {
-        const getProduct = await queryMysql(
-          `SELECT * FROM CHI_TIET_HDN WHERE SP_id = ${product.SP_id}`
-        );
-        const inforProduct = await queryMysql(
-          `SELECT SP_id, SP_ten, SP_trongLuong, SP_donViTinh, DMSP_id FROM SANPHAM WHERE SP_id = ${product.SP_id} AND SP_HSD >= CURRENT_DATE`
-        );
-
-        productReceipt.push({
-          SP_id: inforProduct[0].SP_id, // Add SP_id to productReceipt
-          SP_ten: inforProduct[0].SP_ten,
-          SP_trongLuong: inforProduct[0].SP_trongLuong,
-          SP_donViTinh: inforProduct[0].SP_donViTinh,
-          soluong: getProduct[0].CTHDN_soLuong,
-          DMSP_id: inforProduct[0].DMSP_id, // Add DMSP_id to productReceipt
-        });
+        console.log("product ID", product.SP_id);
+        if (j < 4) {
+          const inforProduct = await queryMysql(
+            `SELECT * FROM SANPHAM WHERE SP_HSD >= CURRENT_DATE AND SP_id = ${product.SP_id}`
+          );
+          if (inforProduct.length > 0) {
+            productReceipt.push({
+              SP_id: inforProduct[0].SP_id,
+              SP_ten: inforProduct[0].SP_ten,
+              SP_trongLuong: inforProduct[0].SP_trongLuong,
+              SP_donViTinh: inforProduct[0].SP_donViTinh,
+              SP_soLuong: inforProduct[0].SP_soLuong,
+              DMSP_id: inforProduct[0].DMSP_id,
+            });
+          }
+          j++;
+          console.log("productReceipt", productReceipt);
+        }
       }
 
       // Iterate through each product

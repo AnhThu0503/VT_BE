@@ -3,6 +3,7 @@ const cloudinary = require("../../service/cloundinary.js");
 
 class BlogController {
   async createBlog(req, res) {
+    if (!req.body.B_tieuDe || !req.body.value) res.json(false);
     try {
       const currentDate = new Date()
         .toISOString()

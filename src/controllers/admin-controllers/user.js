@@ -1,4 +1,8 @@
 const queryMysql = require("../../database/mysql.js");
+const bcrypt = require("bcrypt");
+var privateKey = "anhthu";
+var jwt = require("jsonwebtoken");
+const saltRounds = 10;
 class UserController {
   async getAllUser(req, res) {
     const users = await queryMysql(`SELECT * FROM nguoi_dung`);
@@ -64,5 +68,62 @@ class UserController {
       console.log(error);
     }
   }
+  async createUser(req, res) {
+    let hash = await bcrypt.hash(req.body.ND_matKhau, saltRounds);
+    let users = await queryMysql(
+      `select ND_email from NGUOI_DUNG where ND_email='${req.body.ND_email}'`
+    );
+    if (users.length === 0) {
+      let create_user =
+        await queryMysql(`insert into NGUOI_DUNG(ND_ten,ND_email,ND_matKhau,ND_gioiTinh,ND_SDT,ND_diaChi)value(
+                  '${req.body.ND_ten}',
+                  '${req.body.ND_email}',
+                  '${hash}',
+                  ${req.body.ND_gioiTinh},
+                  '${req.body.ND_SDT}',
+                  '${req.body.ND_diaChi}'
+
+              )`);
+      res.json({ success: true, message: "Thành công" });
+    } else {
+      res.json({ success: false, message: "Email đã tồn tại" });
+    }
+  }
+  async handleLogin(req, res) {
+    try {
+      const user = req.body;
+      const users = await queryMysql(
+        `select ND_id, ND_matkhau from nguoi_dung where ND_email='${user.email}' AND ND_email='Admin@gmail.com'`
+      );
+      if (users.length === 1) {
+        const compare = await bcrypt.compare(
+          user.password,
+          users[0].ND_matkhau
+        );
+        if (compare) {
+          const token = await jwt.sign({ ND_id: users[0].ND_id }, privateKey);
+
+          res.json({ success: true, token });
+        } else {
+          res.json({ success: false, message: "Mật khẩu không đúng" });
+        }
+      } else {
+        res.json({ success: false, message: "Email chưa đăng ký" });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  async authenUser(req, res) {
+    try {
+      var userVerify = await jwt.verify(req.query.token, privateKey);
+      const users = await queryMysql(
+        `select ND_id, ND_email, ND_ten,ND_SDT, ND_diaChi from nguoi_dung where ND_id=${userVerify.ND_id}`
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
+
 module.exports = new UserController();

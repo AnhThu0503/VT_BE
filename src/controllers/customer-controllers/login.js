@@ -38,6 +38,59 @@ class LoginController {
     }
   }
 
+  async handleLoginWithGoogle(req, res) {
+    try {
+      // const profile = ;
+      // console.log(" req.body", req.body);
+      let user = req.body.profile;
+      // console.log("user", user);
+      const users = await queryMysql(
+        `select ND_id from nguoi_dung where ND_email='${user.email}'`
+      );
+      if (users.length === 1) {
+        // console.log("run 1");
+        const token = await jwt.sign({ ND_id: users[0].ND_id }, privateKey);
+        const count_cart = await queryMysql(
+          `select count(GH_id) as value from giohang where ND_id=${users[0].ND_id}`
+        );
+        if (count_cart[0].value === 0) {
+          const create_cart = await queryMysql(
+            `insert into giohang(ND_id)value(${users[0].ND_id})`
+          );
+        }
+        res.json({ success: true, token });
+      } else {
+        let create_user =
+          await queryMysql(`insert into NGUOI_DUNG(ND_ten,ND_AnhDaiDien,ND_email)values(
+                    '${user.name}',
+                    '${user.picture}',
+                    '${user.email}'
+                )`);
+        const users = await queryMysql(
+          `select ND_id from nguoi_dung where ND_email='${user.email}'`
+        );
+        if (users[0] && users[0].ND_id !== null) {
+          const token = await jwt.sign({ ND_id: users[0].ND_id }, privateKey);
+          const count_cart = await queryMysql(
+            `select count(GH_id) as value from giohang where ND_id=${users[0].ND_id}`
+          );
+          // console.log("count_cart", count_cart);
+          if (count_cart[0].value === 0) {
+            const create_cart = await queryMysql(
+              `insert into giohang(ND_id)value(${users[0].ND_id})`
+            );
+            console.log("create_cart", create_cart);
+          }
+          res.json({ success: true, token });
+        } else {
+          res.json({ success: false, message: " thất bại" });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async authenUser(req, res) {
     try {
       var userVerify = await jwt.verify(req.query.token, privateKey);

@@ -28,7 +28,7 @@ class BlogController {
             SELECT B_id, B_tieuDe, B_ngayTao, DMSP_id
             FROM BLOG
             ORDER BY B_ngayTao DESC
-            LIMIT 2;
+            LIMIT 4;
         `);
 
       for (let i = 0; i < recent_blogs.length; i++) {
@@ -55,40 +55,49 @@ class BlogController {
 
   async getBlog(req, res) {
     try {
-      let blogs = await queryMysql(
-        `SELECT * FROM BLOG WHERE B_id=${req.query.B_id}`
-      );
+      const blogId = req.query.B_id;
+
+      // Fetch the blog post
+      const blogs = await queryMysql(`SELECT * FROM BLOG WHERE B_id=${blogId}`);
       if (blogs.length === 0) {
         return res.status(404).json({ error: "Blog not found" });
       }
 
-      let categorys = await queryMysql(
-        `select * from SANPHAM where DMSP_id=${blogs[0].DMSP_id} AND SP_HSD >= CURRENT_DATE`
-      );
-      for (let product of categorys) {
-        let images = await queryMysql(
-          `select HA_URL from hinhanh where SP_id=${product.SP_id}`
-        );
-        let prices = await queryMysql(
-          `select * from gia where SP_id=${product.SP_id}`
-        );
+      // Fetch related products
+      const categorys = await queryMysql(`
+        SELECT * FROM SANPHAM 
+        WHERE DMSP_id=${blogs[0].DMSP_id} AND SP_HSD >= CURRENT_DATE
+      `);
+
+      // Fetch details for each related product
+      for (let i = 0; i < Math.min(categorys.length, 5); i++) {
+        const product = categorys[i];
+        const images = await queryMysql(`
+          SELECT HA_URL FROM HINHANH WHERE SP_id=${product.SP_id}
+        `);
+        const prices = await queryMysql(`
+          SELECT * FROM GIA WHERE SP_id=${product.SP_id}
+        `);
         product.price = prices.length > 0 ? prices[0].G_thoiGia : 0;
         product.image = images.length > 0 ? images[0].HA_URL : "";
-        let product_discount = await queryMysql(
-          `select * from khuyenmai where CURDATE() BETWEEN KM_ngayBatDau and KM_ngayKetThuc and SP_id=${product.SP_id}`
-        );
+        const productDiscount = await queryMysql(`
+          SELECT * FROM KHUYENMAI 
+          WHERE CURDATE() BETWEEN KM_ngayBatDau AND KM_ngayKetThuc 
+          AND SP_id=${product.SP_id}
+        `);
         product.discount =
-          product_discount.length > 0 ? product_discount[0] : null;
+          productDiscount.length > 0 ? productDiscount[0] : null;
       }
 
-      let blogs_images = await queryMysql(
-        `SELECT HAB_URL FROM HINHANHBLOG WHERE B_id=${blogs[0].B_id}`
-      );
-      blogs[0].blogs_images = blogs_images.reverse();
+      // Fetch images related to the blog post
+      const blogsImages = await queryMysql(`
+        SELECT HAB_URL FROM HINHANHBLOG WHERE B_id=${blogs[0].B_id}
+      `);
+      blogs[0].blogs_images = blogsImages.reverse();
 
       res.json({
         blog: blogs[0],
-        categorys: categorys,
+        categorys: categorys.slice(0, 5), // Limiting to 5 related products
       });
     } catch (error) {
       console.error("Error fetching blog:", error);

@@ -36,6 +36,7 @@ router.get("/blog/comment", blogController.getAllComments);
 router.post("/products/search", productController.searchProduct);
 router.post("/order", orderController.createOrder);
 router.post("/order/check", orderController.isOrderOk);
+router.post("/login-google", loginController.handleLoginWithGoogle);
 router.post("/login", loginController.handleLogin);
 router.post("/users", registerController.createUser);
 router.post("/users/comment", commentController.comment);

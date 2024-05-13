@@ -5,11 +5,15 @@ class ProductController {
   async createProduct(req, res) {
     try {
       const create_input_order =
-        await queryMysql(`insert into HOADONNHAP(NCC_id,HDN_noiDung,HDN_tongTien,HDN_ngayNhap)value(
+        await queryMysql(`insert into HOADONNHAP(NCC_id,HDN_noiDung,HDN_ngayNhap)value(
                 ${req.body.id_supplier_selected},
                 '${req.body.noiDung}',
                 '${req.body.ngayNhap}'
             )`);
+      console.log(
+        " ${req.body.id_category_selected}",
+        req.body.id_category_selected
+      );
       const create_product =
         await queryMysql(`insert into sanpham(DMSP_id,SP_ten,SP_NSX,SP_HSD,SP_soLuong,SP_trongLuong,SP_donViTinh,SP_moTa)value(
                 ${req.body.id_category_selected},
@@ -96,8 +100,7 @@ class ProductController {
         UPDATE SANPHAM
         SET 
           SP_ten = '${req.body.SP_ten}',
-          SP_NSX = '${req.body.SP_NSX}',
-          SP_HSD = '${req.body.SP_HSD}',
+        
           SP_soLuong = ${req.body.SP_soLuong},
           SP_trongLuong = ${req.body.SP_trongLuong},
           SP_donViTinh = '${req.body.SP_donViTinh}',
@@ -244,49 +247,54 @@ class ProductController {
     try {
       // Execute the SQL query against the database to get the top 3 products
       const productData = await queryMysql(`
-            SELECT SP_id, COUNT(*) AS quantity_count 
-            FROM CHI_TIET_DH 
-            GROUP BY SP_id 
-            ORDER BY quantity_count DESC 
-            LIMIT 6
-        `);
+        SELECT SP_id, COUNT(*) AS quantity_count 
+        FROM CHI_TIET_DH 
+        GROUP BY SP_id 
+        ORDER BY quantity_count DESC 
+      `);
 
       const productsOrder = [];
-      let numStock = 0; // Change const to let
-
+      const productReceipt = [];
+      let j = 0;
       for (const product of productData) {
+        let numStock = 0; // Initialize numStock inside the loop
+
         const getProduct = await queryMysql(
-          `SELECT * FROM CHI_TIET_DH WHERE SP_id =${product.SP_id}`
+          `SELECT * FROM CHI_TIET_DH WHERE SP_id = ${product.SP_id}`
         );
 
         const inforProduct = await queryMysql(
-          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
+          `SELECT * FROM SANPHAM WHERE  SP_id = ${product.SP_id} AND SP_HSD >= CURRENT_DATE`
         );
 
         let sum = 0;
         for (const productDB of getProduct) {
           sum += productDB.CTDH_soLuong;
         }
-        numStock = sum; // Assign sum to sl
-        productsOrder.push({
-          ten: inforProduct[0].SP_ten,
-          soluong: sum,
-        });
-      }
+        numStock = sum;
 
-      const productReceipt = [];
-      for (const product of productData) {
-        const getProduct = await queryMysql(
-          `SELECT * FROM CHI_TIET_HDN WHERE SP_id =${product.SP_id}`
-        );
-        const inforProduct = await queryMysql(
-          `SELECT * FROM SANPHAM WHERE SP_id =${product.SP_id}`
-        );
+        if (inforProduct.length > 0 && j <= 5) {
+          j++;
+          productsOrder.push({
+            ten: inforProduct[0].SP_ten,
+            soluong: sum,
+          });
 
-        productReceipt.push({
-          ten: inforProduct[0].SP_ten,
-          soluong: getProduct[0].CTHDN_soLuong - numStock, // Calculate the difference
-        });
+          const getProductReceipt = await queryMysql(
+            `SELECT * FROM CHI_TIET_HDN WHERE SP_id = ${product.SP_id}`
+          );
+          const receiptQuantity =
+            getProductReceipt.length > 0
+              ? getProductReceipt[0].CTHDN_soLuong
+              : 0;
+
+          productReceipt.push({
+            ten: inforProduct[0].SP_ten,
+            soluong: receiptQuantity - numStock, // Calculate the difference
+          });
+        } else {
+          console.log(`No product found for SP_id: ${product.SP_id}`);
+        }
       }
 
       // Send the result as a response
@@ -354,7 +362,7 @@ class ProductController {
   JOIN 
       CHI_TIET_HDN ON SANPHAM.SP_id = CHI_TIET_HDN.SP_id
   WHERE 
-      ABS(CHI_TIET_HDN.CTHDN_soLuong - SANPHAM.SP_soLuong) <= 5
+      ABS(CHI_TIET_HDN.CTHDN_soLuong - SANPHAM.SP_soLuong) <= 5 AND SP_HSD >= CURRENT_DATE
   ORDER BY ABS(CHI_TIET_HDN.CTHDN_soLuong - SANPHAM.SP_soLuong) ASC
   LIMIT 6
       `);

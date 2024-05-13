@@ -26,7 +26,8 @@ router.get("/orders-count", orderController.countOrder);
 router.get("/ordersConfirm-count", orderController.countOrderConfirm);
 router.get("/products-count", productController.countProduct);
 router.get("/products-count-hsd", productController.countProductHSD);
-
+router.get("/login", usercontroller.authenUser);
+router.post("/login", usercontroller.handleLogin);
 router.get("/users-count", usercontroller.countUser);
 router.get("/collect", productController.collectStatic);
 router.get("/image/count", productController.countImage);
@@ -40,6 +41,7 @@ router.post("/discount/update", discountController.getDiscount);
 router.post("/category", categoryController.uploadProductCategory);
 router.post("/blog/image", blogController.uploadImage);
 router.post("/supplier", supplierController.uploadSupplier);
+router.post("/user/add", usercontroller.createUser);
 
 router.put("/blog/update", blogController.updateBlog);
 router.put("/user/update", usercontroller.updateCustomer);

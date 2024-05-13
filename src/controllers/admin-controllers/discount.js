@@ -58,8 +58,7 @@ class DiscountController {
         SET 
           KM_noiDung = '${req.body.KM_noiDung}',
           SP_id = ${req.body.id_product_selected},
-          KM_ngayBatDau = '${req.body.KM_ngayBatDau}',
-          KM_ngayKetThuc = '${req.body.KM_ngayKetThuc}',
+         
           KM_mucGiamGia = ${req.body.KM_mucGiamGia}
         WHERE KM_id = ${id}`);
       res.json("update success");
