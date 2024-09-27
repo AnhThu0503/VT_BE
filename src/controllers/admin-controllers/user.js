@@ -92,15 +92,14 @@ class UserController {
   async handleLogin(req, res) {
     try {
       const user = req.body;
+      console.log("user", user);
       const users = await queryMysql(
         `select ND_id, ND_matkhau from nguoi_dung where ND_email='${user.email}' AND ND_email='Admin@gmail.com'`
       );
+      console.log("users", users);
+
       if (users.length === 1) {
-        const compare = await bcrypt.compare(
-          user.password,
-          users[0].ND_matkhau
-        );
-        if (compare) {
+        if (user.password == users[0].ND_matkhau) {
           const token = await jwt.sign({ ND_id: users[0].ND_id }, privateKey);
 
           res.json({ success: true, token });
